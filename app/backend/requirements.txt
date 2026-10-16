@@ -1,16 +1,15 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-mysql-connector-python
-pydantic
-python-dotenv
-openai
-
-#jwt-auth
-python-jose[cryptography]
-passlib[bcrypt]
-python-multipart
+-c requirements.lock
+fastapi==0.143.2
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.4
+mysql-connector-python==26.7.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
+python-dotenv==1.2.4
+openai==3.31.0
+python-jose[cryptography]==3.5.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.32
 bcrypt==4.0.1
-
-# 일괄 설치
-# pip install -r requirements.txt
+email-validator==2.3.0
+alembic==1.20.0
