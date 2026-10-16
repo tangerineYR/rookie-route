@@ -1,3 +1,4 @@
+import { apiFetch, apiErrorMessage } from "../lib/api";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -23,7 +24,7 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            const res = await fetch("http://localhost:8000/auth/signup", {
+            const res = await apiFetch("/auth/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -37,7 +38,7 @@ const Signup = () => {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.detail || "회원가입에 실패했습니다.");
+                throw new Error(apiErrorMessage(errorData, "회원가입에 실패했습니다."));
             }
 
             // 회원가입 성공 - 로그인 페이지로 이동
@@ -74,6 +75,9 @@ const Signup = () => {
                             </label>
                             <input
                                 id="username"
+                                minLength={3}
+                                maxLength={50}
+                                pattern="[a-zA-Z0-9_]+"
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
@@ -112,13 +116,14 @@ const Signup = () => {
                             </label>
                             <input
                                 id="password"
+                                minLength={8}
+                                maxLength={72}
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                minLength={6}
                                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                                placeholder="최소 6자 이상"
+                                placeholder="최소 8자 이상"
                             />
                         </div>
 

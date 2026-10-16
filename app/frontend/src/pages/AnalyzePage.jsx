@@ -1,3 +1,4 @@
+import { apiFetch } from "../lib/api";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import ErrorPatternCard from "../components/ErrorPatternCard";
@@ -7,6 +8,7 @@ import StatisticsCard from "../components/StatisticsCard";
 const AnalyzePage = () => {
     const [history, setHistory] = useState([]);
     const [dashboardData, setDashboardData] = useState(null);
+    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
     const [userId, setUserId] = useState("");
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -32,14 +34,23 @@ const AnalyzePage = () => {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`http://localhost:8000/dashboard/stats/${userId}`);
+                setError(null);
+                const res = await apiFetch("/dashboard/stats/me", { authenticated: true });
 
+                if (res.status === 401) {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('username');
+                    setDashboardData(null);
+                    setIsLoggedIn(false);
+                    return;
+                }
+                if (!res.ok) throw new Error('통계를 불러오지 못했습니다. 다시 시도해주세요.');
                 if (res.ok) {
                     const data = await res.json();
                     setDashboardData(data);
                 }
             } catch (error) {
-                console.error('Failed to fetch dashboard data:', error);
+                setError(error.message);
             } finally {
                 setLoading(false);
             }
@@ -144,6 +155,7 @@ const AnalyzePage = () => {
                     </p>
                 </div>
 
+                {error && <p role="alert" className="text-red-600 mb-6">{error}</p>}
                 {/* 3번 기능: Personal Error Pattern Analysis */}
                 <div className="mb-16">
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">

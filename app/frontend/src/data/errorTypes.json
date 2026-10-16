@@ -1,0 +1,18 @@
+[
+  "SyntaxError",
+  "IndentationError",
+  "TypeError",
+  "ImportError",
+  "NameError",
+  "LogicError",
+  "InfiniteLoop",
+  "BoundaryError",
+  "NullSafety",
+  "DataStructureMisuse",
+  "Efficiency",
+  "RedundantCode",
+  "NamingConvention",
+  "Security",
+  "Documentation",
+  "Other"
+]

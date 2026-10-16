@@ -1,3 +1,4 @@
+import { apiFetch, apiErrorMessage } from "../lib/api";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CodeEditor from "../components/CodeEditor";
@@ -53,7 +54,7 @@ const Home = () => {
         setResult(null);
 
         try {
-            const res = await fetch("http://localhost:8000/review/analyze", {
+            const res = await apiFetch("/review/analyze", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -77,7 +78,7 @@ const Home = () => {
                     return;
                 }
 
-                throw new Error(errorData.detail || `Server error: ${res.status}`);
+                throw new Error(apiErrorMessage(errorData, `Server error: ${res.status}`));
             }
 
             const data = await res.json();

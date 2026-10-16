@@ -1,3 +1,4 @@
+import { apiFetch, apiErrorMessage } from "../lib/api";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -19,7 +20,7 @@ const Login = () => {
             formData.append('username', username);
             formData.append('password', password);
 
-            const res = await fetch("http://localhost:8000/auth/login", {
+            const res = await apiFetch("/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
@@ -29,7 +30,7 @@ const Login = () => {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.detail || "로그인에 실패했습니다.");
+                throw new Error(apiErrorMessage(errorData, "로그인에 실패했습니다."));
             }
 
             const data = await res.json();

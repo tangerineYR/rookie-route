@@ -1,32 +1,12 @@
+import errorTypes from '../data/errorTypes.json';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const ErrorTypeChart = ({ data }) => {
-    // 1. 색상 매핑표
-    const ERROR_COLOR_MAP = {
-        // 🔴 1그룹: 실행 불가 (Red & Rose & Pink) -> 확연한 명도 차이
-        SyntaxError:      '#7F1D1D', // 아주 진한 피색 (Red-900) - 가장 무거운 에러
-        TypeError:        '#EF4444', // 표준 빨강 (Red-500)
-        ImportError:      '#F472B6', // 꽃분홍색 (Pink-400) - 확 튐
-        IndentationError: '#FDA4AF', // 연한 살구색 (Rose-300) - 밝음
-        NameError:        '#9F1239', // 진한 자주색 (Rose-800)
-
-        // 🟡 2그룹: 논리 오류 (Orange & Amber & Yellow) -> 색조 차이
-        InfiniteLoop:     '#7C2D12', // 아주 진한 갈색 (Orange-900) - 위험해 보임
-        LogicError:       '#F59E0B', // 표준 노랑 (Amber-500)
-        BoundaryError:    '#FDBA74', // 연한 귤색 (Orange-300)
-        NullSafety:       '#CA8A04', // 어두운 황금색 (Yellow-600)
-        DataStructureMisuse: '#FEF08A', // 아주 밝은 레몬색 (Yellow-200)
-
-        // 🔵 3그룹: 품질 (Blue & Indigo & Teal) -> 차가운 색 조합
-        Efficiency:       '#1E3A8A', // 아주 진한 남색 (Blue-900)
-        RedundantCode:    '#3B82F6', // 표준 파랑 (Blue-500)
-        NamingConvention: '#14B8A6', // 청록색 (Teal-500) - 초록 느낌 섞음
-        Security:         '#8B5CF6', // 보라색 (Violet-500) - 보안 느낌
-        Documentation:    '#94A3B8', // 쿨그레이 (Slate-400)
-        Other:            '#CBD5E1', // 연한 회색 (Slate-300)
-    };
-
-    const DEFAULT_COLORS = ['#6366F1', '#EC4899', '#14B8A6', '#8B5CF6'];
+    const colors = ['#7F1D1D', '#FDA4AF', '#EF4444', '#F472B6', '#9F1239',
+        '#F59E0B', '#7C2D12', '#FDBA74', '#CA8A04', '#FEF08A', '#1E3A8A',
+        '#3B82F6', '#14B8A6', '#8B5CF6', '#94A3B8', '#CBD5E1'];
+    const ERROR_COLOR_MAP = Object.fromEntries(errorTypes.map((type, i) => [type, colors[i % colors.length]]));
+    const DEFAULT_COLORS = ['#CBD5E1'];
 
     // 총합 계산 (비율 표시용)
     const totalErrors = data.reduce((sum, item) => sum + item.value, 0);
