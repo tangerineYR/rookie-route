@@ -1,104 +1,59 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-# --- 공통 ---
-class WeaknessDetail(BaseModel):
-    type: str
-    line: Optional[int] = None
-    explanation: str
+from error_types import ErrorType
 
-# --- Review ---
+
+class AIWeakness(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    type: ErrorType
+    line: int | None = Field(default=None, ge=0, le=15000, strict=True)
+    explanation: str = Field(min_length=1, max_length=10000, strict=True)
+
+
+class AIAnalysisResult(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    summary: str = Field(min_length=1, max_length=2000, strict=True)
+    weaknesses: list[AIWeakness] = Field(max_length=100)
+
+
 class CodeRequest(BaseModel):
-    code: str
-    language: str
+    code: str = Field(min_length=1, max_length=15000)
+    language: str = Field(min_length=1, max_length=20, pattern=r'^[a-zA-Z0-9+#.-]+$')
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "code": "def calculate_area(radius):\n    # 원주율을 3으로 계산하는 실수\n    return 3 * radius * radius",
-                "language": "python"
-            }
-        }
 
-class AnalysisResponse(BaseModel):
+class AnalysisResponse(AIAnalysisResult):
     submission_id: int
-    summary: str
-    weaknesses: List[WeaknessDetail]
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "submission_id": 105,
-                "summary": "제출하신 코드는 원의 넓이를 계산하려고 하지만, 원주율(pi) 값을 정확한 값 대신 정수 3을 사용하여 오차가 발생할 수 있습니다.",
-                "weaknesses": [
-                    {
-                        "type": "PrecisionLoss",
-                        "line": 3,
-                        "explanation": "정확도를 위해 math 모듈의 math.pi를 사용하거나 3.14159와 같은 더 정밀한 값을 사용하는 것이 좋습니다."
-                    }
-                ]
-            }
-        }
 
-# --- Dashboard ---
 class StatItem(BaseModel):
-    weakness_type: str
+    weakness_type: ErrorType
     count: int
+
 
 class DashboardResponse(BaseModel):
     total_submissions: int
-    stats: List[StatItem] 
-    
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "total_submissions": 42,
-                "stats": [
-                    {"weakness_type": "LogicError", "count": 15},
-                    {"weakness_type": "SyntaxError", "count": 8},
-                    {"weakness_type": "SecurityVulnerability", "count": 5}
-                ]
-            }
-        }
+    stats: list[StatItem]
 
-# --- Auth (회원가입/로그인) ---
+
 class UserCreate(BaseModel):
-    username: str
-    email: str
-    password: str
+    username: str = Field(min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
+    email: EmailStr = Field(max_length=100)
+    password: str = Field(min_length=8, max_length=72)
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                # 순서 통일: username -> email -> password
-                "username": "rookie_dev",
-                "email": "dev@rookieroute.com",
-                "password": "StrongPassword123!"
-            }
-        }
+    @field_validator('password')
+    @classmethod
+    def bcrypt_length(cls, value: str) -> str:
+        if len(value.encode('utf-8')) > 72:
+            raise ValueError('Password must be at most 72 UTF-8 bytes')
+        return value
+
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     username: str
     email: str
-    
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "username": "rookie_dev",
-                "email": "dev@rookieroute.com"
-            }
-        }
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.Et9...",
-                "token_type": "bearer"
-            }
-        }
