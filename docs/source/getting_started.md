@@ -6,7 +6,7 @@ Welcome to Rookie Route! This guide will help you get started with the platform.
 
 ### Prerequisites
 
-* Node.js (v16 or higher)
+* Node.js (v24 or higher)
 * Python 3.11+
 * MySQL
 
