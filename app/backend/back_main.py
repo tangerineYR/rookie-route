@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import models
-from database import engine
+from core.config import get_settings
+from core.logging import configure_logging
 from routers import review, dashboard, auth
 
-# MySQL DB에 테이블이 없다면 자동으로 생성
-models.Base.metadata.create_all(bind=engine)
+# Validate required configuration at startup; schema changes use Alembic.
+get_settings()
+configure_logging()
 
 app = FastAPI(
     title="RookieRoute",

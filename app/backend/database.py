@@ -1,23 +1,18 @@
-import os
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-# .env 파일에서 환경 변수 로드
-load_dotenv()
+from core.config import get_settings
 
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(get_settings().database_url, pool_pre_ping=True, hide_parameters=True)
+if engine.dialect.name == 'sqlite':
+    @event.listens_for(engine, 'connect')
+    def enable_foreign_keys(connection, _):
+        connection.execute('PRAGMA foreign_keys=ON')
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+SessionLocal = sessionmaker(autoflush=False, bind=engine)
 Base = declarative_base()
 
-# API 요청마다 DB 세션을 생성하고 닫아주는 함수
+
 def get_db():
-    db = SessionLocal()
-    try:
+    with SessionLocal() as db:
         yield db
-    finally:
-        db.close()
