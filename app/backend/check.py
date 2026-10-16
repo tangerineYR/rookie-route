@@ -1,22 +1,27 @@
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
+"""Check configured OpenAI access without exposing credentials or provider error bodies."""
+import sys
+from openai import APIError, OpenAI
+from core.config import get_settings
 
-# .env 파일에서 키 불러오기
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
 
-client = OpenAI(api_key=api_key)
+def main():
+    settings = get_settings()
+    if not settings.openai_api_key or not settings.openai_api_key.get_secret_value().strip():
+        print('OpenAI API key is not configured.', file=sys.stderr)
+        return 1
+    try:
+        with OpenAI(
+            api_key=settings.openai_api_key.get_secret_value(),
+            timeout=settings.openai_timeout_seconds, max_retries=settings.openai_max_retries,
+        ) as client:
+            for model in client.models.list():
+                if 'gpt' in model.id:
+                    print(model.id)
+    except APIError as error:
+        print(f'OpenAI access check failed ({type(error).__name__}).', file=sys.stderr)
+        return 1
+    return 0
 
-try:
-    # 사용 가능 모델 조회
-    model_list = client.models.list()
-    
-    print("내 키로 사용 가능한 주요 모델:")
-    for model in model_list:
-        # 모델 ID만 출력 (gpt가 들어간 것만 필터링)
-        if "gpt" in model.id:
-            print(f"- {model.id}")
 
-except Exception as e:
-    print(f"확인 불가: {e}")
+if __name__ == '__main__':
+    raise SystemExit(main())
