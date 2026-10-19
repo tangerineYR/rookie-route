@@ -1,6 +1,7 @@
 # 🚀 RookieRoute API Reference
 
-**RookieRoute** is a comprehensive backend service powered by **FastAPI**, **MySQL**, and **OpenAI**. It provides automated code reviews, vulnerability analysis, and user statistics dashboards.
+RookieRoute provides a FastAPI backend for authentication, AI-assisted code
+analysis, structured weakness persistence, and per-user analytics.
 
 ---
 
@@ -9,163 +10,226 @@
 | Item | Description |
 | :--- | :--- |
 | **Base URL** | `http://localhost:8000` |
-| **Documentation** | [Swagger UI](http://localhost:8000/docs) / [ReDoc](http://localhost:8000/redoc) |
-| **Authentication** | OAuth2 Password Bearer (JWT) |
+| **Swagger UI** | `http://localhost:8000/docs` |
+| **ReDoc** | `http://localhost:8000/redoc` |
+| **Authentication** | OAuth2 Password Bearer / JWT |
 | **Data Format** | JSON |
 
-> **Note:** Endpoints marked with 🔒 require an `Authorization` header:  
-> `Authorization: Bearer <your_access_token>`
+Protected endpoints require:
+
+```text
+Authorization: Bearer <access_token>
+```
 
 ---
 
-## 🔐 Authentication
+# 🔐 Authentication
 
-To access protected endpoints, you must authorize first.
+## `POST /auth/signup`
 
-1. Click the **Authorize** button (Lock icon) at the **top right** of the page.
-2. Enter your credentials in the login form.
+Creates a user account.
 
+### Request
 
-### `POST` /auth/signup
-**Register a new user.**
+```json
+{
+  "email": "dev@example.com",
+  "password": "StrongPassword123!",
+  "username": "rookie_dev"
+}
+```
 
-* **Request Body** (`UserCreate`)
-    ```json
-    {
-      "email": "dev@rookieroute.com",
-      "password": "StrongPassword123!",
-      "username": "rookie_dev"
-    }
-    ```
+### Response
 
-* **Response** `200 OK` (`UserResponse`)
-    ```json
-    {
-      "email": "dev@rookieroute.com",
-      "username": "rookie_dev"
-    }
-    ```
+```text
+201 Created
+```
 
-### `POST` /auth/login
-**Authenticate user and retrieve an access token.**
+```json
+{
+  "email": "dev@example.com",
+  "username": "rookie_dev"
+}
+```
 
-* **Note**: This endpoint follows the **OAuth2 standard** and requires data to be sent as **Form Data**, not JSON.
-* **Content-Type**: `application/x-www-form-urlencoded`
+Duplicate username or email:
 
-* **Request Body** (Required Fields)
-    * `username`: **rookie_dev**
-    * `password`: **StrongPassword123!**
-    * *(Ignore other fields like `grant_type`, `client_id` shown in Swagger UI)*
-
-* **Response** `200 OK` (`Token`)
-    ```json
-    {
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.Et9...",
-      "token_type": "bearer"
-    }
-    ```
+```text
+409 Conflict
+```
 
 ---
 
-## 💻 Code Review
+## `POST /auth/login`
 
-AI-powered analysis to identify logic errors and syntax issues.
+Authenticates a user and returns a JWT access token.
 
-### `POST` /review/analyze 🔒
-**Submit code for analysis and receive feedback.**
+The endpoint accepts OAuth2 form data rather than JSON.
 
-* **Request Body** (`CodeRequest`)
-    ```json
-    {
-      "code": "def calculate_area(radius):\n    # 원주율을 3으로 계산하는 실수\n    return 3 * radius * radius",
-      "language": "python"
-    }
-    ```
+### Content-Type
 
-* **Response** `200 OK` (`AnalysisResponse`)
-    ```json
-    {
-      "submission_id": 105,
-      "summary": "제출하신 코드는 원의 넓이를 계산하려고 하지만, 원주율(pi) 값을 정확한 값 대신 정수 3을 사용하여 오차가 발생할 수 있습니다.",
-      "weaknesses": [
-        {
-          "explanation": "정확도를 위해 math 모듈의 math.pi를 사용하거나 3.14159와 같은 더 정밀한 값을 사용하는 것이 좋습니다.",
-          "line": 3,
-          "type": "PrecisionLoss"
-        }
-      ]
-    }
-    ```
+```text
+application/x-www-form-urlencoded
+```
+
+### Required Fields
+
+```text
+username
+password
+```
+
+### Response
+
+```json
+{
+  "access_token": "<jwt>",
+  "token_type": "bearer"
+}
+```
 
 ---
 
-## 📊 Dashboard
+# 💻 Code Review
 
-Retrieve statistics regarding user submissions and weakness patterns.
+## `POST /review/analyze` 🔒
 
-### `GET` /dashboard/stats/{user_id}
-**Get aggregated statistics for a specific user.**
+Submits source code for AI analysis.
 
-* **Parameters**
-    * `user_id` (path, required): The ID of the target user.
+### Request
 
-* **Response** `200 OK` (`DashboardResponse`)
-    ```json
+```json
+{
+  "code": "def calculate_area(radius):\n    return 3 * radius * radius",
+  "language": "python"
+}
+```
+
+### Response
+
+```json
+{
+  "submission_id": 105,
+  "summary": "코드 분석 요약",
+  "weaknesses": [
     {
-      "stats": [
-        {
-          "count": 15,
-          "weakness_type": "LogicError"
-        },
-        {
-          "count": 8,
-          "weakness_type": "SyntaxError"
-        },
-        {
-          "count": 5,
-          "weakness_type": "SecurityVulnerability"
-        }
-      ],
-      "total_submissions": 42
+      "type": "LogicError",
+      "line": 2,
+      "explanation": "분석된 문제에 대한 설명"
     }
-    ```
+  ]
+}
+```
+
+The AI response must satisfy the backend's `AIAnalysisResult` and `AIWeakness`
+schemas before it can be persisted.
+
+Unsupported `ErrorType` values or malformed responses are rejected.
 
 ---
 
-## ⚙️ System
+# 📊 Dashboard
 
-### `GET` /
-**Health Check Endpoint.**
+## `GET /dashboard/stats/me` 🔒
 
-* **Response** `200 OK`
-    ```json
+Returns aggregated statistics for the authenticated user.
+
+The backend derives the user from the validated JWT.
+
+No `user_id` path or query parameter is accepted.
+
+### Response
+
+```json
+{
+  "stats": [
     {
-      "message": "RookieRoute 서버가 정상적으로 실행 중입니다."
+      "count": 15,
+      "weakness_type": "LogicError"
+    },
+    {
+      "count": 8,
+      "weakness_type": "SyntaxError"
+    },
+    {
+      "count": 5,
+      "weakness_type": "Security"
     }
-    ```
+  ],
+  "total_submissions": 42
+}
+```
 
 ---
 
-## 📦 Data Models (Schemas)
+# ⚙️ System
 
-### User & Auth
-| Model | Fields | Description |
-| :--- | :--- | :--- |
-| **UserCreate** | `email`, `password`, `username` | Payload for user registration. |
-| **UserResponse** | `email`, `username` | Public user profile information. |
-| **Token** | `access_token`, `token_type` | JWT Token response format. |
+## `GET /`
 
-### Analysis
-| Model | Fields | Description |
-| :--- | :--- | :--- |
-| **CodeRequest** | `code`, `language` | Source code payload for review. |
-| **WeaknessDetail** | `explanation`, `line`, `type` | Specific details of a found issue. |
-| **AnalysisResponse** | `submission_id`, `summary`, `weaknesses` | Comprehensive analysis result. |
+Health-check endpoint.
 
-### Dashboard
-| Model | Fields | Description |
-| :--- | :--- | :--- |
-| **StatItem** | `count`, `weakness_type` | Count per weakness category. |
-| **DashboardResponse**| `stats`, `total_submissions` | Aggregated dashboard data. |
+### Response
+
+```json
+{
+  "message": "RookieRoute 서버가 정상적으로 실행 중입니다."
+}
+```
 
 ---
+
+# 📦 Data Models
+
+## UserCreate
+
+| Field | Type |
+| :--- | :--- |
+| `username` | string |
+| `email` | email string |
+| `password` | string |
+
+## UserResponse
+
+| Field | Type |
+| :--- | :--- |
+| `username` | string |
+| `email` | string |
+
+## Token
+
+| Field | Type |
+| :--- | :--- |
+| `access_token` | string |
+| `token_type` | string |
+
+## CodeRequest
+
+| Field | Type |
+| :--- | :--- |
+| `code` | string |
+| `language` | string |
+
+## AIWeakness
+
+| Field | Type |
+| :--- | :--- |
+| `type` | `ErrorType` |
+| `line` | integer or null |
+| `explanation` | string |
+
+## AnalysisResponse
+
+Extends `AIAnalysisResult` and adds:
+
+```text
+submission_id
+```
+
+## DashboardResponse
+
+```text
+total_submissions
+stats[]
+  ├─ weakness_type
+  └─ count
+```
