@@ -29,11 +29,13 @@
 
 <br/>
 
-[📚 Documentation](https://rookie-route-repository.readthedocs.io/en/latest/)
+[📚 Technical Docs](docs/source/index.rst)
 &nbsp;·&nbsp;
-[🌐 Project Page](https://rookie-route.github.io/rookie-route-repository)
+[🌐 Project Page](https://tangerineyr.github.io/rookie-route/)
 &nbsp;·&nbsp;
 [🤝 Contributing](CONTRIBUTING.md)
+&nbsp;·&nbsp;
+[📚 Original Team Documentation](https://rookie-route-repository.readthedocs.io/en/latest/)
 
 </div>
 
@@ -72,19 +74,23 @@ Error Pattern Aggregation
 | **Repository Activity** | 2025.11.19 – 2025.12.11 |
 | **주요 역할** | Backend · AI Integration · Docs as Code · OSS Environment |
 | **협업 방식** | GitHub Issue / Branch / Pull Request 기반 협업 |
-| **Team Collaboration** | 83 merged PRs across 3 contributors |
-| **My Contribution** | 33 authored & merged PRs |
+| **Team Repository** | 154 main-branch commits · 83 merged PRs |
+| **My Git History** | 63 author-attributed main commits · 33 merged PRs authored |
 | **Backend** | FastAPI · SQLAlchemy · MySQL · JWT |
-| **AI** | OpenAI API · Structured Output |
-| **Documentation** | Sphinx · MyST · Mermaid · ReadTheDocs |
+| **AI** | OpenAI API · JSON Mode · Pydantic Validation |
+| **Documentation** | Sphinx · MyST · Mermaid · Jekyll i18n |
 | **CI/CD** | GitHub Actions |
 
 > **Portfolio Refactoring**
 >
 > 본 저장소는 3인 팀 프로젝트의 원본 repository를 기반으로 한 개인 포트폴리오 fork입니다.
-> 팀 프로젝트 종료 이후 별도의 7개 commit을 통해 Authentication/Authorization,
-> Strict AI Response Validation, Atomic Transaction, Foreign Key & Cascade,
-> Alembic Migration, Structured Logging, Regression Tests 및 GitHub Actions CI를 추가로 리팩토링했습니다.
+> 팀 프로젝트 종료 이후 Authentication/Authorization, Strict AI Response Validation,
+> Atomic Transaction, Foreign Key & Cascade, Alembic Migration, Structured Logging,
+> Regression Tests 및 GitHub Actions CI를 추가로 보강했습니다.
+>
+> 이후 실제 구현과 공개 문서 간의 정합성을 다시 검증하여 API Reference,
+> Configuration, Technical Documentation, GitHub Pages 콘텐츠와 Repository Hygiene도
+> 현재 코드 기준으로 정리했습니다.
 
 ---
 
@@ -378,11 +384,13 @@ Current Schema
 사용자의 모든 Weakness row를 Application Memory로 가져와 Python에서 집계하지 않고 Database에서 직접 집계합니다.
 
 ```sql
-SELECT type, COUNT(id)
+SELECT weaknesses.type, COUNT(weaknesses.id)
 FROM weaknesses
 JOIN submissions
-GROUP BY type
-ORDER BY COUNT(id) DESC;
+  ON weaknesses.submission_id = submissions.id
+WHERE submissions.owner_id = :current_user_id
+GROUP BY weaknesses.type
+ORDER BY COUNT(weaknesses.id) DESC;
 ```
 
 이를 통해 Dashboard API는 사용자별 총 분석 횟수와 Error Category 빈도를 제공하며, 반복적으로 발생하는 약점 패턴을 시각화할 수 있습니다.
@@ -618,7 +626,7 @@ Rookie Route는 코드뿐 아니라 프로젝트 운영 과정도 repository 안
 - **CONTRIBUTING.md** — Branch / Commit / PR Contribution Workflow
 - **CODE_OF_CONDUCT.md** — Open Source Community Guidelines
 
-자세한 문서는 [ReadTheDocs](https://rookie-route-repository.readthedocs.io/en/latest/)에서 확인할 수 있습니다.
+자세한 기술 문서는 [`docs/source/`](docs/source/)에서 확인할 수 있습니다.
 
 ---
 

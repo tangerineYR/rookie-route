@@ -2,8 +2,8 @@
 
 title: Rookie Route
 description: AI-powered code coaching and learning analytics platform for beginner developers
-baseurl: "/rookie-route-repository"
-url: "https://rookie-route.github.io"
+baseurl: "/rookie-route"
+url: "https://tangerineyr.github.io"
 
 # Theme
 # theme: jekyll-theme-cayman  # Commented out - using remote_theme instead
@@ -28,8 +28,9 @@ navigation:
     url: /contact
 
 # External Links
-github_url: https://github.com/rookie-route/rookie-route-repository
-docs_url: https://rookie-route-repository.readthedocs.io
+github_url: https://github.com/tangerineYR/rookie-route
+docs_url: https://github.com/tangerineYR/rookie-route/tree/main/docs/source
+upstream_url: https://github.com/rookie-route/rookie-route-repository
 discord_url: https://discord.gg/qzEBPv6bAV
 
 # Build settings
