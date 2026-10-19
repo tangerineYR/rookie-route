@@ -1,49 +1,68 @@
 # 💡 How to Use Rookie Route
 
-Rookie Route is an AI-powered code analysis and learning tool that helps you improve your coding skills. Follow the guide below to utilize its key features.
+Rookie Route is an AI-powered code analysis and learning analytics tool for
+beginner developers.
 
 ## 🧠 AI-Powered Code Analysis
 
-Rookie Route provides AI-powered code analysis to help you improve your coding skills.
-
 ![AI Code Analysis - Error Patterns](images/analyze1.png)
 
-### Submit Your Code for Analysis
+### Submit Code for Analysis
 
-1. Navigate to the **Code Analysis** page
-2. Paste or type your code in the editor
-3. Click **Analyze** to get instant feedback
-4. Review the suggestions and recommendations
+1. Sign up or log in.
+2. Open the code-analysis screen.
+3. Paste or write source code in the editor.
+4. Select the language.
+5. Click **Analyze My Code**.
+6. Review the returned summary and weaknesses.
 
-### Understanding the Analysis
+The analysis response contains:
 
-The AI analysis provides:
+- a summary
+- a controlled `ErrorType`
+- the related line number when available
+- an explanation for each weakness
 
-- **Code Quality Review** - Identify potential improvements
-- **Bug Detection** - Spot common errors and edge cases
-- **Performance Tips** - Optimize for better efficiency
-- **Best Practices** - Learn industry-standard coding patterns
+The backend validates the AI response before storing it.
 
-### Track Your Progress
+## 🕘 Recent Analysis History
+
+The analysis screen keeps up to 20 recent analyses in browser `localStorage`.
+
+The History panel can be used to reopen recently analyzed code.
+
+This browser history is separate from server-side learning analytics.
+
+## 📊 Personal Error Pattern Analytics
 
 ![Error Visualization](images/analyze2.png)
 
-Monitor your improvement over time with:
+The authenticated report page retrieves:
 
-- Error trend analysis
-- Common pattern detection
-- Achievement milestones
-- Submission history
+```text
+GET /dashboard/stats/me
+```
 
-## 🏠 Main Dashboard
+The backend derives the user identity from the JWT and aggregates the user's
+stored `Weakness` records.
 
-![Main Dashboard](images/main.png)
+The report currently shows:
 
-The main dashboard gives you an overview of:
+- total number of completed analyses
+- weakness count by `ErrorType`
+- the most frequently occurring weakness
+- error-category distribution
 
-- Your recent code submissions
-- Progress statistics
-- Learning recommendations
-- Community updates
+```text
+Authenticated User
+       ↓
+Submission[]
+       ↓
+Weakness[]
+       ↓
+COUNT / GROUP BY ErrorType
+       ↓
+Dashboard
+```
 
-Next Step: Head over to the Code Analysis page now to analyze your first code and receive feedback!
+No client-provided user ID is used to retrieve another user's statistics.
