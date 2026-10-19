@@ -1,7 +1,7 @@
 # Jekyll Configuration for Rookie Route
 
 title: Rookie Route
-description: An open-source platform guiding new developers through their career paths
+description: AI-powered code coaching and learning analytics platform for beginner developers
 baseurl: "/rookie-route-repository"
 url: "https://rookie-route.github.io"
 

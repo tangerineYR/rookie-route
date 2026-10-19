@@ -1,57 +1,86 @@
 # ❓ FAQ
 
-This document provides answers to frequently asked questions about the Rookie Route project.
-
-
 ## 🌐 General Questions
 
-### Q1: What is the ultimate goal of Rookie Route?
+### Q1: What is the goal of Rookie Route?
 
-A1: The goal is to reduce the confusion and uncertainty experienced by new developers and to help them adapt to a real-world working environment by providing mentorship, roadmaps, and actual code contribution experience.
+Rookie Route helps beginner developers turn repeated AI code reviews into
+structured learning data.
 
+Instead of only fixing the current submission, the system stores validated
+weakness categories per user and aggregates repeated error patterns across
+multiple submissions.
 
+### Q2: Is Rookie Route open source?
 
-### Q2: Is the Rookie Route project for profit?
+Yes. The project repository is distributed under the Apache License 2.0.
 
-A2: Currently, it is operated as a non-profit open-source project, and all code is freely available under the Apache-2.0 License.
-
-
+---
 
 ## ⚙️ Usage and Setup
 
 ### Q1: What environment is required to run the project locally?
 
-A1: To run both the frontend and the backend, the following are required:
- Backend: Python 3.8 or higher, MySQL database
- Frontend: Node.js (v18 or higher), Yarn or npm
-Please refer to the `README.md` file for detailed installation and execution commands.
- 
+The current repository uses:
+
+- Python 3.11+
+- Node.js 24
+- MySQL 8.0+
+
+See `README.md` and `getting_started.md` for the current setup procedure.
 
 ### Q2: How does the code review feature work?
 
-A2: It works by sending the code submitted by the user to the [OpenAI API] to analyze weaknesses and provide feedback on improvement strategies.
+The authenticated user submits source code to the FastAPI backend.
 
+The backend sends the code to the configured OpenAI model and requires a
+structured JSON response.
 
-### Q3: How can I confirm that the server is running?
+Pydantic validates the returned summary and weaknesses against the
+application's `ErrorType` taxonomy before the result is stored as
+`Submission` and `Weakness` records.
 
-A3: If you navigate to `http://localhost:8000/docs`, and the following welcome message is displayed, the server is running normally:
-`{"message": "RookieRoute server is running properly."}`
+### Q3: How can I confirm that the backend is running?
 
+Open:
 
+```text
+http://localhost:8000/docs
+```
 
-## 🤝 Contribution and Community
+or request:
+
+```text
+GET /
+```
+
+The root endpoint returns:
+
+```json
+{
+  "message": "RookieRoute 서버가 정상적으로 실행 중입니다."
+}
+```
+
+---
+
+## 🤝 Contribution
 
 ### Q1: I found a bug. How should I report it?
 
-A1: Please report it via the [Issues] tab of the GitHub repository. Providing detailed information according to the bug reporting template specified in `CONTRIBUTING.md` (e.g., reproduction steps, expected results, actual results) will help us resolve it quickly.
+Use the repository's issue tracker and include:
 
+- a clear description
+- reproduction steps
+- expected behavior
+- actual behavior
+- environment information
 
-### Q2: Can I participate in ways other than code contribution?
+See `CONTRIBUTING.md` for the collaboration workflow.
 
-A2: Yes, of course! You can contribute in various ways, such as documentation improvement, translation, suggesting new ideas, and participating in Q&A within the community. Please check `CONTRIBUTING.md` for more details.
+### Q2: Can I contribute without changing application code?
 
+Yes.
 
-### Q3: Where is the real-time communication channel?
-
-A3: The Discord channel link is: https://discord.com/invite/qzEBPv6bAV
-
+Documentation, translation, tests, bug reports, and improvement proposals
+can also be useful contributions.

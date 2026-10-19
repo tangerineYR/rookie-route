@@ -1,57 +1,107 @@
 # 🛠️ Technical Overview
 
-This document provides a comprehensive technical overview of the **RookieRoute** backend system, detailing the monorepo structure, database schema, security implementation, and core logic flow.
+Rookie Route is a React + FastAPI application that converts AI-assisted code
+reviews into structured per-user learning data.
 
 ---
 
-## 🏗️ System Architecture
-
-RookieRoute follows a **Layered Architecture** within a Monorepo structure. The Frontend and Backend communicate via RESTful APIs, while the Backend orchestrates data persistence and AI analysis.
+# 🏗️ System Architecture
 
 ```mermaid
-graph TD
-    User((User))
-    FE[Frontend<br/>React + Vite]
-    BE[Backend<br/>FastAPI]
-    DB[(MySQL<br/>Database)]
-    AI[OpenAI API<br/>GPT Models]
+flowchart LR
+    USER[User]
+    FE[React + Vite]
+    API[FastAPI]
+    AI[OpenAI API]
+    DB[(MySQL)]
 
-    User -- "Interacts via Browser" --> FE
-    FE -- "REST API (JSON)" --> BE
-    BE -- "SQLAlchemy ORM" --> DB
-    BE -- "Analysis Request" --> AI
-    AI -- "Code Feedback" --> BE
+    USER --> FE
+    FE -->|JWT + Source Code| API
+    API -->|Structured Analysis Request| AI
+    AI -->|JSON Response| API
+    API -->|Pydantic Validation| DB
+    DB -->|Per-user Aggregation| API
+    API --> FE
 ```
 
-## 📂 Project Structure
-The project is organized into two main directories under app/:
+---
 
-```
-rookie-route-repository/
-└── app/
-    ├── backend/                # 🐍 FastAPI Application
-    │   ├── routers/            # API Route handlers (auth, review, dashboard)
-    │   ├── back_main.py        # Application Entry Point
-    │   ├── check.py            # Utility: OpenAI Key Verification Script
-    │   ├── database.py         # DB Connection & Session Management
-    │   ├── dependencies.py     # Dependency Injection (Auth Validation)
-    │   ├── models.py           # SQLAlchemy ORM Models
-    │   ├── schemas.py          # Pydantic Schemas (DTOs)
-    │   ├── security.py         # Cryptography & Token Logic
-    │   └── .env                # Backend Configuration
-    │
-    └── frontend/               # ⚛️ React Application
-        ├── src/                # Component & Logic Source
-        └── vite.config.mjs     # Vite Configuration
+# 📂 Project Structure
+
+```text
+app/
+├── backend/
+│   ├── core/
+│   │   ├── config.py
+│   │   ├── logging.py
+│   │   └── security.py
+│   │
+│   ├── routers/
+│   │   ├── auth.py
+│   │   ├── review.py
+│   │   └── dashboard.py
+│   │
+│   ├── services/
+│   │   └── analyzer.py
+│   │
+│   ├── migrations/
+│   ├── tests/
+│   ├── models.py
+│   ├── schemas.py
+│   ├── error_types.py
+│   ├── database.py
+│   ├── back_main.py
+│   └── .env.example
+│
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── pages/
+    │   └── lib/
+    └── package.json
 ```
 
-## 💾 Database Schema (ERD)
-We use SQLAlchemy to model the data. The schema is designed to efficiently store user submissions and their analysis results.
+Real `.env` files are ignored and must not be committed.
+
+---
+
+# 🤖 Structured AI Analysis
+
+The analysis pipeline is:
+
+```text
+Source Code
+    ↓
+OpenAI API
+    ↓
+JSON Response
+    ↓
+AIAnalysisResult
+    ├─ summary
+    └─ AIWeakness[]
+          ├─ type
+          ├─ line
+          └─ explanation
+    ↓
+Pydantic Validation
+    ↓
+Database Transaction
+```
+
+The model must classify findings using the application's controlled
+`ErrorType` taxonomy.
+
+Unsupported categories, malformed JSON, unexpected fields, invalid line
+numbers, and oversized responses are rejected before persistence.
+
+---
+
+# 💾 Relational Data Model
 
 ```mermaid
 erDiagram
-    USERS ||--o{ SUBMISSIONS : "writes"
-    SUBMISSIONS ||--o{ WEAKNESSES : "contains"
+    USERS ||--o{ SUBMISSIONS : owns
+    SUBMISSIONS ||--o{ WEAKNESSES : contains
 
     USERS {
         int id PK
@@ -65,6 +115,7 @@ erDiagram
         int owner_id FK
         text code_snippet
         string language
+        string summary
         datetime created_at
     }
 
@@ -76,67 +127,121 @@ erDiagram
         text explanation
     }
 ```
-Note: The weaknesses table is configured with cascade="all, delete-orphan", ensuring that if a submission is deleted, its associated weakness records are also automatically removed.
 
-## 🔐 Security Implementation
-RookieRoute implements industry-standard security protocols to protect user data.
+Relationships use foreign keys and cascade deletion.
 
-1. Authentication Flow
+---
 
-    The system uses OAuth2 Password Bearer Flow with JWT (HS256).
+# 🔐 Authentication and Ownership
+
+Rookie Route uses JWT Bearer authentication.
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant F as Frontend
-    participant B as Backend (Auth)
-    participant D as DB
+    participant B as FastAPI
+    participant D as Database
 
-    U->>F: Enter Credentials
-    F->>B: POST /auth/login (username, password)
-    B->>D: Find User & Verify Hash
-    D-->>B: User Valid
-    B->>F: Return JWT Access Token
-    
-    Note over U, B: Authenticated Request
-    U->>F: Request Analysis
-    F->>B: POST /review/analyze (Header: Bearer Token)
-    B->>B: Validate Token & Expiry
-    B-->>F: Return Analysis Result
+    U->>F: Login
+    F->>B: POST /auth/login
+    B->>D: Verify user
+    D-->>B: User
+    B-->>F: JWT
+
+    U->>F: Analyze code
+    F->>B: POST /review/analyze + Bearer JWT
+    B->>B: Validate JWT
+    B->>D: Persist with current_user.id
+
+    U->>F: Open analytics
+    F->>B: GET /dashboard/stats/me
+    B->>B: Validate JWT
+    B->>D: Aggregate current user's weaknesses
+    D-->>B: Counts
+    B-->>F: DashboardResponse
 ```
 
-2. Password Hashing
-
-    Passwords are never stored in plain text. We use bcrypt (via passlib) for secure hashing and verification.
-
-    Implementation: See backend/security.py.
-
-3. Request Validation (dependencies.py)
-
-    Every protected endpoint uses the get_current_user dependency:
-
-    Extracts the Bearer token from the request header.
-
-    Decodes the token using the SECRET_KEY.
-
-    Validates the sub (username) payload.
-
-    Queries the database to confirm the user exists.
-
-## 🤖 Core Logic: AI Code Analysis
-The analysis pipeline transforms raw code into structured feedback.
-
-Input: User submits code via POST /review/analyze.
-
-Processing:
-
-The backend constructs a prompt for the OpenAI API.
-
-The model analyzes the code for Logic Errors, Syntax Issues, and Style Violations.
-
-Parsing: The unstructured text response is parsed into WeaknessDetail objects defined in schemas.py.
-
-Persistence: The results are saved to the MySQL database for future dashboard visualization.
+The client does not select dashboard ownership using an arbitrary `user_id`.
 
 ---
-Last Updated: v1.0.0
+
+# 📊 Learning Analytics
+
+The dashboard performs database-side aggregation.
+
+Conceptually:
+
+```sql
+SELECT weakness_type, COUNT(*)
+FROM weaknesses
+JOIN submissions
+WHERE submissions.owner_id = current_user_id
+GROUP BY weakness_type;
+```
+
+The API returns:
+
+- total submissions
+- count per weakness category
+
+The frontend uses this data to display personal error-pattern statistics.
+
+---
+
+# 🧱 Transaction Boundary
+
+A `Submission` and its related `Weakness` records are persisted in one logical
+transaction.
+
+```text
+INSERT Submission
+      ↓
+flush()
+      ↓
+INSERT Weakness[]
+      ↓
+commit()
+```
+
+If persistence fails:
+
+```text
+rollback()
+```
+
+This prevents partially saved analysis results.
+
+---
+
+# 🗃️ Database Migration
+
+Schema changes are managed using Alembic rather than application-startup
+`create_all()` calls.
+
+The migration suite includes compatibility handling for the legacy ownership
+model and regression tests for invalid migration input.
+
+---
+
+# 🧪 Testing
+
+Backend tests cover areas including:
+
+- authentication
+- JWT validation
+- structured AI response validation
+- provider failure mapping
+- transaction rollback
+- foreign keys and cascade behavior
+- migration behavior
+- structured logging
+
+GitHub Actions runs regression tests against both SQLite and MySQL.
+
+Frontend CI runs:
+
+```text
+npm test
+npm run build
+```
